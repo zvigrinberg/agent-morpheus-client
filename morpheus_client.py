@@ -133,7 +133,6 @@ class OutputEventHandler(FileSystemEventHandler):
   def on_modified(self, event):
     self.hook()
 
-@st.cache_resource
 def monitor_output():
   observer = Observer()
   observer.schedule(OutputEventHandler(print_output),'output.json', recursive=False)
