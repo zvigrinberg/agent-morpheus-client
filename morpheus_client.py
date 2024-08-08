@@ -135,7 +135,7 @@ class OutputEventHandler(FileSystemEventHandler):
 
 def monitor_output():
   observer = Observer()
-  observer.schedule(OutputEventHandler(print_output),'output.json', recursive=False)
+  observer.schedule(OutputEventHandler(print_output),Path(data_dir, 'output.json'), recursive=False)
   observer.start()
 
 monitor_output()
