@@ -9,6 +9,7 @@ from utils.sbom_tools import SbomInput, parse_sbom
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from callback.http_callback import HttpCallback
+from utils.output_tools import generate_markdown
 
 st.set_page_config(page_title='Morpheus Client', layout='wide')
 
@@ -24,12 +25,39 @@ def on_receive_callback(data):
   with open(Path(data_dir, 'output.json'), 'w') as f:
     json.dump(data, f)
 
+import logging
+logger = logging.getLogger(__name__)
+
+def print_output():
+ callback_file = Path(data_dir, 'output.json')
+ logger.error('file updated')
+ if callback_file.is_file():
+  with open(callback_file, 'r') as f:
+    st.header('Evaluation result')
+    data = json.load(f)
+    items = generate_markdown(data['output'])
+    for item in items:
+      with st.expander(item[0], expanded=True):
+        st.markdown(item[1])
+    st.download_button(label='Download', type='primary', data=json.dumps(data), file_name='output.json')
+
+class OutputEventHandler(FileSystemEventHandler):
+
+  def __init__(self, hook):
+    self.hook = hook
+
+  def on_modified(self, event):
+    self.hook()
+
 callback_server = HttpCallback()
 
 if not hasattr(st, 'callback_server_listening'):
   st.callback_server_listening = True
   if __name__ == '__main__':
     callback_server.serve(on_receive=on_receive_callback)
+    observer = Observer()
+    observer.schedule(OutputEventHandler(print_output), data_dir, recursive=False)
+    observer.start()
 
 MORPHEUS_URL=os.getenv("MORPHEUS_URL")
 if MORPHEUS_URL is None:
@@ -89,6 +117,7 @@ def send_to_morpheus():
   if not response.ok:
     st.session_state['running'] = False
     main_col.error(f'Morpheus backend error: {response.status_code} - {response.reason}')
+  st.session_state['running'] = False
 
 def save_file():
   with open(Path(data_dir, 'input.json'), 'w') as f:
@@ -116,26 +145,4 @@ if 'sbom' in st.session_state:
 else:
   helper_col.text('Load an SBOM to show the input data')
 
-def print_output():
- callback_file = Path(data_dir, 'output.json')
- if callback_file.is_file():
-  with open(callback_file, 'r') as f:
-    st.header('Callback')
-    st.write(json.load(f))
-
 print_output()
-
-class OutputEventHandler(FileSystemEventHandler):
-
-  def __init__(self, hook):
-    self.hook = hook
-
-  def on_modified(self, event):
-    self.hook()
-
-def monitor_output():
-  observer = Observer()
-  observer.schedule(OutputEventHandler(print_output),Path(data_dir, 'output.json'), recursive=False)
-  observer.start()
-
-monitor_output()
