@@ -92,11 +92,12 @@ def send_to_morpheus():
   st.session_state['running'] = False
 
 def save_file():
-  with open(Path(data_dir, 'input.json'), 'w') as f:
+  if "sbom" in st.session_state:
     data = build_input()
-    f.write(data.model_dump_json(by_alias=True, indent=True))
-    f.close()
-  st.session_state['morpheus_waiting'] = False
+    st.session_state['morpheus_waiting'] = False
+    return data.model_dump_json(by_alias=True, indent=True)
+  else:
+    return ""
 
 main_col, helper_col = st.columns([2, 5])
 main_col.header("Build Morpheus Request")
@@ -105,7 +106,7 @@ st.session_state.cves=main_col.text_input(label='CVEs', placeholder='CVE-2024-27
 st.session_state.input_file=main_col.file_uploader("Pick a CycloneDX SBOM File generated form Syft")
 update_file()
 main_col.button('Send to Morpheus', on_click=send_to_morpheus, type='primary', disabled=is_running() or not st.session_state['data_ready'])
-main_col.button('Save Morpheus Input', on_click=save_file, type='secondary', disabled=not st.session_state['data_ready'])
+main_col.download_button('Save Morpheus Input', type='secondary', file_name='input.json', disabled=not st.session_state['data_ready'], data=save_file())
 
 print_input_data(helper_col)
 
