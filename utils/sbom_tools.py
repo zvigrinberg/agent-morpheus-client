@@ -1,10 +1,10 @@
 from pydantic import BaseModel
-from utils.github_tools import get_main_language
+from utils.github_tools import get_languages
 
 class GitRepoRef(BaseModel):
   ref: str
   commit_id: str
-  language: str
+  languages: list[str]
 
 class SbomInput(BaseModel):
   name: str
@@ -25,5 +25,5 @@ def parse_sbom(sbom) -> SbomInput:
   repo_ref = __get_property(props, 'syft:image:labels:io.openshift.build.source-location')
   commit_url = __get_property(props, 'syft:image:labels:io.openshift.build.commit.url')
   commit_id = commit_url.split('/')[-1]
-  language=get_main_language(repo_ref.removeprefix('https://github.com/'))
-  return SbomInput(name=name, tag=tag, sbom=sbom, repo_ref=GitRepoRef(ref=repo_ref, commit_id=commit_id, language=language))
+  languages=get_languages(repo_ref.removeprefix('https://github.com/'))
+  return SbomInput(name=name, tag=tag, sbom=sbom, repo_ref=GitRepoRef(ref=repo_ref, commit_id=commit_id, languages=languages))

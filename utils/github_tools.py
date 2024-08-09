@@ -1,15 +1,16 @@
 import requests
 
+from utils.client_model import SUPPORTED_LANGUAGES
+
 template = 'https://api.github.com/repos/{repo_name}/languages'
 
-def get_main_language(repo_name: str) -> str:
+def get_languages(repo_name: str) -> list[str]:
   response = requests.get(template.format(repo_name=repo_name))
   if response.ok:
     languages = response.json()
-    top: dict = []
+    known_languages = []
     for language in languages.keys():
-      if top == [] or languages[language] > top[1]:
-        top = (language, languages[language])
-      
-    return top[0]
-  raise Exception(f'GitHub - get_main_language: {response.status_code} - {response.reason}')
+      if language in SUPPORTED_LANGUAGES:
+        known_languages.append(language)
+    return known_languages
+  raise Exception(f'GitHub - get_languages: {response.status_code} - {response.reason}')

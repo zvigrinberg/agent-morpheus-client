@@ -4,12 +4,10 @@ import os
 import json
 from pathlib import Path
 
-from utils.client_model import InputRequest, Scan, Vuln, build_image_from_sbom
-from utils.sbom_tools import SbomInput, parse_sbom
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from utils.sbom_tools import parse_sbom
 from callback.http_callback import HttpCallback
 from utils.output_tools import generate_markdown
+from utils.input_tools import build_input, print_input_data
 
 st.set_page_config(page_title='Morpheus Client', layout='wide')
 
@@ -25,12 +23,8 @@ def on_receive_callback(data):
   with open(Path(data_dir, 'output.json'), 'w') as f:
     json.dump(data, f)
 
-import logging
-logger = logging.getLogger(__name__)
-
 def print_output():
  callback_file = Path(data_dir, 'output.json')
- logger.error('file updated')
  if callback_file.is_file():
   with open(callback_file, 'r') as f:
     st.header('Evaluation result')
@@ -41,23 +35,12 @@ def print_output():
         st.markdown(item[1])
     st.download_button(label='Download', type='primary', data=json.dumps(data), file_name='output.json')
 
-class OutputEventHandler(FileSystemEventHandler):
-
-  def __init__(self, hook):
-    self.hook = hook
-
-  def on_modified(self, event):
-    self.hook()
-
 callback_server = HttpCallback()
 
 if not hasattr(st, 'callback_server_listening'):
   st.callback_server_listening = True
   if __name__ == '__main__':
     callback_server.serve(on_receive=on_receive_callback)
-    observer = Observer()
-    observer.schedule(OutputEventHandler(print_output), data_dir, recursive=False)
-    observer.start()
 
 MORPHEUS_URL=os.getenv("MORPHEUS_URL")
 if MORPHEUS_URL is None:
@@ -98,17 +81,6 @@ def update_file():
         set_data_ready()
       except Exception as exc:
         main_col.error(exc.message)
-      
-
-def build_input() -> InputRequest:
-  sbom: SbomInput = st.session_state.sbom
-  cves_text = st.session_state.cves
-  st.session_state['morpheus_waiting'] = True
-  
-  cves = [cve.strip() for cve in cves_text.split(',')]
-  scan=Scan(vulns=[Vuln(vuln_id=cve) for cve in cves])
-  input_data = InputRequest(image=build_image_from_sbom(sbom), scan=scan)
-  return input_data
 
 def send_to_morpheus():
   data = build_input()
@@ -135,14 +107,6 @@ update_file()
 main_col.button('Send to Morpheus', on_click=send_to_morpheus, type='primary', disabled=is_running() or not st.session_state['data_ready'])
 main_col.button('Save Morpheus Input', on_click=save_file, type='secondary', disabled=not st.session_state['data_ready'])
 
-helper_col.header('Input Data')
-if 'sbom' in st.session_state:
-  input_data = build_input()
-  helper_col.text('Name: ' + input_data.image.name )
-  helper_col.text('Tag: ' + input_data.image.tag)
-  helper_col.text('Source: ' + input_data.image.source_info[0].git_repo)
-  helper_col.text('Commit Id: ' + input_data.image.source_info[0].commit_id)
-else:
-  helper_col.text('Load an SBOM to show the input data')
+print_input_data(helper_col)
 
 print_output()
