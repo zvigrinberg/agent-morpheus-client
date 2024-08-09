@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-morpheus-client
+  labels:
+    app: agent-morpheus-client
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-morpheus-client
+  template:
+    metadata:
+      labels:
+        app: agent-morpheus-client
+    spec:
+      containers:
+        - name: agent-morpheus-client
+          image: quay.io/ruben/morpheus-client:latest
+          imagePullPolicy: Always
+          command: ["streamlit", "run", "morpheus_client.py", "--server.port=8080", "--server.address=0.0.0.0"]
+          ports:
+            - name: http
+              protocol: TCP
+              containerPort: 8080
+            - name: callback
+              protocol: TCP
+              containerPort: 8081
+          env:
+            - name: MORPHEUS_URL
+              value: http://agent-morpheus:8080/scan
+            - name: CALLBACK_PORT
+              value: "8081"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-morpheus-client
+  labels:
+    app: agent-morpheus-client
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: callback
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    app: agent-morpheus-client
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: agent-morpheus-client
+spec:
+  port:
+    targetPort: 8080 
+  to:
+    kind: Service
+    name: agent-morpheus-client

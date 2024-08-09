@@ -66,7 +66,7 @@ def __get_includes(language: str) -> list[str]:
       "assets/**/*",           # Additional assets directory
     ]
     case 'Dockerfile': return [
-      "Dockerfile*",            # Main Dockerfile
+      "Dockerfile*",           # Main Dockerfile
       "docker-compose.yml",    # Docker Compose configuration
       "*.dockerfile",          # Additional Dockerfiles with different names
       "*.dockerignore",        # Docker ignore files
