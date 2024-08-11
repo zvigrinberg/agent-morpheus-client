@@ -80,7 +80,7 @@ def update_file():
         st.session_state['git_loading'] = False
         set_data_ready()
       except Exception as exc:
-        main_col.error(exc.message)
+        main_col.error(repr(exc))
 
 def send_to_morpheus():
   data = build_input()
