@@ -25,5 +25,5 @@ def parse_sbom(sbom) -> SbomInput:
   repo_ref = __get_property(props, 'syft:image:labels:io.openshift.build.source-location')
   commit_url = __get_property(props, 'syft:image:labels:io.openshift.build.commit.url')
   commit_id = commit_url.split('/')[-1]
-  languages=get_languages(repo_ref.removeprefix('https://github.com/'))
+  languages = get_languages(repo_ref.removeprefix('https://github.com/').replace('.git', ''))
   return SbomInput(name=name, tag=tag, sbom=sbom, repo_ref=GitRepoRef(ref=repo_ref, commit_id=commit_id, languages=languages))
