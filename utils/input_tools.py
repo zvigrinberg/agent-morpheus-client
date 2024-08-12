@@ -101,8 +101,7 @@ def __get_excludes(language: str) -> list[str]:
     match language:
         case 'Go':
             return [
-                "test/**/*",
-                "vendor/**/*"
+                "test/**/*"
             ]
         case 'Java':
             return [
