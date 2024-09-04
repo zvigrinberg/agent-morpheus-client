@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: agent-morpheus-client
-          image: quay.io/ruben/morpheus-client:latest
+          image: quay.io/zgrinber/agent-morpheus-client:latest
           imagePullPolicy: Always
           command: ["streamlit", "run", "morpheus_client.py", "--server.port=8080", "--server.address=0.0.0.0"]
           ports:
